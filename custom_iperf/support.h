@@ -49,8 +49,8 @@ struct iphdr {
 #define MTU 1500
 
 #define MULTIPLE_WRITE(_fd, _buf, _cnt)\
+unsigned int count = _cnt;\
 do {\
-    unsigned int count = _cnt;\
     count -= write(_fd, _buf, MTU);\
     if (count <= 0) break;\
 } while (1);
