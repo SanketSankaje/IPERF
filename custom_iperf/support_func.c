@@ -5,7 +5,7 @@
 
 
 char *get_ip(char *if_name) {
-    char *ip_address;
+    char *ip_address = NULL;
     struct ifaddrs *ifaddr, *ifa;
     if (getifaddrs(&ifaddr) == -1) {
         perror("getifaddrs");
@@ -33,7 +33,7 @@ char *get_ip(char *if_name) {
 
 
 char *get_mac(char *if_name, int socketfd) {
-    char *mac_address;
+    char *mac_address = NULL;
     struct ifaddrs *ifaddr, *ifa;
     if (getifaddrs(&ifaddr) == -1) {
         perror("getifaddrs");
@@ -210,7 +210,9 @@ int Configure(char *APPtype, char *if_name, char *proto, char *dst_addr) {
         return FAILURE;
     }
     ip_a = get_ip(if_name);
+    if (ip_a == NULL) {perror("Invalid interface"); return FAILURE;}
     mac_a = get_mac(if_name, fd);
+    if (mac_a == NULL) {perror("Invalid interface"); return FAILURE;}
 
     printf("IP address of %s: %s\n", if_name, ip_a);
     printf("MAC address of %s: %s\n", if_name, mac_a);
