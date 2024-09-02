@@ -119,7 +119,7 @@ int start_tcp_server(int *fd) {
 }
 
 int start_tcp_client(int *fd, char *dst_addr) {
-    struct sockaddr_in saddr, daddr;
+    struct sockaddr_in daddr;
     if (dst_addr != NULL) {
         daddr.sin_family = AF_INET;
         daddr.sin_port = 5201;
@@ -176,7 +176,7 @@ int start_udp_server(int *fd) {
 }
 
 int start_udp_client(int *fd, char *dst_addr) {
-    struct sockaddr_in saddr, daddr;
+    struct sockaddr_in daddr;
     if (dst_addr != NULL) {
         daddr.sin_family = AF_INET;
         daddr.sin_port = 5201;
@@ -199,9 +199,8 @@ int start_udp_client(int *fd, char *dst_addr) {
 }
 
 int Configure(char *APPtype, char *if_name, char *proto, char *dst_addr) {
-    int fd, new_fd, opt = 1;
+    int fd;
     char *ip_a, *mac_a;
-    struct sockaddr_in saddr, daddr;
     if (strcmp(proto, "-udp") == 0)
         fd = socket(AF_INET, SOCK_DGRAM, 0);
     else if (strcmp(proto, "-tcp") == 0)
