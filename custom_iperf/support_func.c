@@ -142,10 +142,10 @@ int start_tcp_client(int *fd, char *dst_addr) {
 }
 
 int start_udp_server(int *fd) {
-    struct sockaddr_in saddr, daddr;
-    int new_fd;
+    struct sockaddr_in saddr;
+    // int new_fd;
     int opt = 1;
-    int addr_len = sizeof(struct sockaddr);
+    // int addr_len = sizeof(struct sockaddr);
     if (setsockopt(*fd, SOL_SOCKET,
                 SO_REUSEADDR | SO_REUSEPORT, &opt,
                 sizeof(opt))) {
@@ -157,17 +157,17 @@ int start_udp_server(int *fd) {
     saddr.sin_family = AF_INET;
     saddr.sin_port = 5201;
     bind(*fd, (struct sockaddr *)&saddr, sizeof(saddr));
-    listen(*fd, 3);
+    // listen(*fd, 3);
     printf("Server running .....\n");
-    if ((new_fd = accept(*fd, (struct sockaddr *)&daddr, (socklen_t*)&addr_len)) < 0) {
-        perror("accept");
-        close(*fd);
-        return FAILURE;
-    }
+    // if ((new_fd = accept(*fd, (struct sockaddr *)&daddr, (socklen_t*)&addr_len)) < 0) {
+    //     perror("accept");
+    //     close(*fd);
+    //     return FAILURE;
+    // }
     char *buf = malloc(sizeof(char) *255);
     while (1) {
         memset(buf, 0, 255);
-        read(new_fd, buf, sizeof(buf));
+        read(*fd, buf, sizeof(buf));
         printf("%s\n", buf);
     }
     free(buf);
@@ -210,22 +210,34 @@ int Configure(char *APPtype, char *if_name, char *proto, char *dst_addr) {
         return FAILURE;
     }
     ip_a = get_ip(if_name);
-    if (ip_a == NULL) {perror("Invalid interface"); return FAILURE;}
+    if (ip_a == NULL) {printf("Invalid interface\n"); return FAILURE;}
     mac_a = get_mac(if_name, fd);
-    if (mac_a == NULL) {perror("Invalid interface"); return FAILURE;}
+    if (mac_a == NULL) {printf("Invalid interface\n"); return FAILURE;}
 
     printf("IP address of %s: %s\n", if_name, ip_a);
     printf("MAC address of %s: %s\n", if_name, mac_a);
 
     if (strcmp(APPtype, "-s") == 0) {
-        if (start_tcp_server(&fd) < 0) {
-            perror("Error starting server!!!");
-            return FAILURE;
+        if (strcmp(proto, "-udp") == 0) {
+            if (start_udp_server(&fd) < 0) {
+                printf("Cannot start server\n");
+                return FAILURE;
+            }
+            else if (start_tcp_server(&fd) < 0) {
+                printf("Cannot start server\n");
+                return FAILURE;
+            }
         }
     } else if (strcmp(APPtype, "-c") == 0) {
-        if (start_tcp_client(&fd, dst_addr) < 0) {
-            perror("Error starting client");
-            return FAILURE;
+        if (strcmp(proto, "-udp") == 0) {
+            if (start_udp_client(&fd, dst_addr) < 0) {
+                printf("Cannot start client\n");
+                return FAILURE;
+            }
+            else if (start_tcp_client(&fd, dst_addr) < 0) {
+                printf("Cannot start client\n");
+                return FAILURE;
+            }
         }
     } else {
         print_suggestions();
