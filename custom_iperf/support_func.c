@@ -84,6 +84,120 @@ void print_suggestions(void) {
     printf("Options:\nArg[0]  executable\nArg[1]  -s -> server (OR) -c -> client\nArg[2]  interface_name\nArg[3]  -tcp -> TCP (OR) -udp -> UDP\nArg[4]  Dest IP incase of CLIENT application else NULL\n");
 }
 
+int start_tcp_server(int *fd) {
+    struct sockaddr_in saddr, daddr;
+    int new_fd;
+    int opt = 1;
+    int addr_len = sizeof(struct sockaddr);
+    if (setsockopt(*fd, SOL_SOCKET,
+                SO_REUSEADDR | SO_REUSEPORT, &opt,
+                sizeof(opt))) {
+        perror("setsockopt");
+        close(*fd);
+        return FAILURE;
+    }
+    saddr.sin_addr.s_addr = INADDR_ANY;
+    saddr.sin_family = AF_INET;
+    saddr.sin_port = 5201;
+    bind(*fd, (struct sockaddr *)&saddr, sizeof(saddr));
+    listen(*fd, 3);
+    printf("Server running .....\n");
+    if ((new_fd = accept(*fd, (struct sockaddr *)&daddr, (socklen_t*)&addr_len)) < 0) {
+        perror("accept");
+        close(*fd);
+        return FAILURE;
+    }
+    char *buf = malloc(sizeof(char) *255);
+    while (1) {
+        memset(buf, 0, 255);
+        read(new_fd, buf, sizeof(buf));
+        printf("%s\n", buf);
+    }
+    free(buf);
+
+    return SUCCESS;
+}
+
+int start_tcp_client(int *fd, char *dst_addr) {
+    struct sockaddr_in saddr, daddr;
+    if (dst_addr != NULL) {
+        daddr.sin_family = AF_INET;
+        daddr.sin_port = 5201;
+        if (inet_pton(AF_INET, dst_addr, &daddr.sin_addr) <= 0) {
+            perror("Invalid address or address not supported\n");
+            close(*fd);
+            return FAILURE;
+        }
+    }
+    if (GetConnection(&daddr,fd) < 0) {
+        perror("Connection Failed");
+        close(*fd);
+        return FAILURE;
+    }
+    printf("Client running ......\n");
+    char buf[255] = "hello";
+    MULTIPLE_WRITE(*fd, buf, sizeof(buf))
+    printf("%s\n", buf);
+    return SUCCESS;
+}
+
+int start_udp_server(int *fd) {
+    struct sockaddr_in saddr, daddr;
+    int new_fd;
+    int opt = 1;
+    int addr_len = sizeof(struct sockaddr);
+    if (setsockopt(*fd, SOL_SOCKET,
+                SO_REUSEADDR | SO_REUSEPORT, &opt,
+                sizeof(opt))) {
+        perror("setsockopt");
+        close(*fd);
+        return FAILURE;
+    }
+    saddr.sin_addr.s_addr = INADDR_ANY;
+    saddr.sin_family = AF_INET;
+    saddr.sin_port = 5201;
+    bind(*fd, (struct sockaddr *)&saddr, sizeof(saddr));
+    listen(*fd, 3);
+    printf("Server running .....\n");
+    if ((new_fd = accept(*fd, (struct sockaddr *)&daddr, (socklen_t*)&addr_len)) < 0) {
+        perror("accept");
+        close(*fd);
+        return FAILURE;
+    }
+    char *buf = malloc(sizeof(char) *255);
+    while (1) {
+        memset(buf, 0, 255);
+        read(new_fd, buf, sizeof(buf));
+        printf("%s\n", buf);
+    }
+    free(buf);
+
+    return SUCCESS;
+}
+
+int start_udp_client(int *fd, char *dst_addr) {
+    struct sockaddr_in saddr, daddr;
+    if (dst_addr != NULL) {
+        daddr.sin_family = AF_INET;
+        daddr.sin_port = 5201;
+        if (inet_pton(AF_INET, dst_addr, &daddr.sin_addr) <= 0) {
+            perror("Invalid address or address not supported\n");
+            close(*fd);
+            return FAILURE;
+        }
+    }
+    if (GetConnection(&daddr,fd) < 0) {
+        perror("Connection Failed");
+        close(*fd);
+        return FAILURE;
+    }
+    printf("Client running ......\n");
+    char buf[255] = "hello";
+    MULTIPLE_WRITE(*fd, buf, sizeof(buf))
+    printf("%s\n", buf);
+    return SUCCESS;
+}
+
 int Configure(char *APPtype, char *if_name, char *proto, char *dst_addr) {
     int fd, new_fd, opt = 1;
     char *ip_a, *mac_a;
@@ -103,52 +217,15 @@ int Configure(char *APPtype, char *if_name, char *proto, char *dst_addr) {
     printf("MAC address of %s: %s\n", if_name, mac_a);
 
     if (strcmp(APPtype, "-s") == 0) {
-        int addr_len = sizeof(struct sockaddr);
-        if (setsockopt(fd, SOL_SOCKET,
-                    SO_REUSEADDR | SO_REUSEPORT, &opt,
-                    sizeof(opt))) {
-            perror("setsockopt");
-            close(fd);
+        if (start_tcp_server(&fd) < 0) {
+            perror("Error starting server!!!");
             return FAILURE;
         }
-        saddr.sin_addr.s_addr = INADDR_ANY;
-        saddr.sin_family = AF_INET;
-        saddr.sin_port = 5201;
-        bind(fd, (struct sockaddr *)&saddr, sizeof(saddr));
-        listen(fd, 3);
-        printf("Server running .....\n");
-        if ((new_fd = accept(fd, (struct sockaddr *)&daddr, (socklen_t*)&addr_len)) < 0) {
-            perror("accept");
-            close(fd);
-            return FAILURE;
-        }
-        char *buf = malloc(sizeof(char) *255);
-        memset(buf, 0, 255);
-        // recvfrom(new_fd, buf, 255, 0, (struct sockaddr *)&daddr, (socklen_t*)&addr_len);
-        read(new_fd, buf, sizeof(buf));
-        printf("%s\n", buf);
-
     } else if (strcmp(APPtype, "-c") == 0) {
-        if (dst_addr != NULL) {
-            daddr.sin_family = AF_INET;
-            daddr.sin_port = 5201;
-            if (inet_pton(AF_INET, dst_addr, &daddr.sin_addr) <= 0) {
-                perror("Invalid address or address not supported\n");
-                close(fd);
-                return FAILURE;
-            }
-        }
-        if (GetConnection(&daddr,&fd) < 0) {
-            perror("Connection Failed");
-            close(fd);
+        if (start_tcp_client(&fd, dst_addr) < 0) {
+            perror("Error starting client");
             return FAILURE;
         }
-        printf("Client running ......\n");
-        char buf[255] = "hello";
-        // int sent = sendto(fd, &buf[0], sizeof(buf), 0, (struct sockaddr*)&daddr, sizeof(struct sockaddr));
-        // write(fd, &buf[0], sizeof(buf));
-        MULTIPLE_WRITE(fd, buf, sizeof(buf))
-        printf("%s\n", buf);
     } else {
         print_suggestions();
         return FAILURE;

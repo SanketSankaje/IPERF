@@ -62,4 +62,7 @@ int Configure(char *type, char *if_name, char *proto, char *dst_addr);
 int GetConnection(struct sockaddr_in *dst_addr, int *sockfd);
 char *get_ip(char *if_name);
 char *get_mac(char *if_name, int  sockfd);
-
+int start_tcp_server(int *fd);
+int start_tcp_client(int *fd, char *dst_addr);
+int start_udp_server(int *fd);
+int start_udp_client(int *fd, char *dst_addr);
