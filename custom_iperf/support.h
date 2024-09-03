@@ -52,8 +52,8 @@ struct iphdr {
 };
 
 struct PACKET {
-    struct iphdr *hdr;
-    char *buf;
+    struct iphdr hdr;
+    char buf[MTU - sizeof(struct iphdr)];
 };
 
 #define MULTIPLE_WRITE(_fd, _buf, _cnt)\

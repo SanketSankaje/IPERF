@@ -76,6 +76,7 @@ char *get_mac(char *if_name, int socketfd) {
 }
 
 void Fill_IP_PKT(struct PACKET *pkt, struct iphdr *ip, char *sip, char *dip, char *data) {
+    int buf_len = sizeof(data);
     ip->h_vhl = 5;                // Header Length (5 words)
     ip->version = 4;               // IP Version (4)
     ip->tos = 0;                  // Type of Service (default)
@@ -87,8 +88,10 @@ void Fill_IP_PKT(struct PACKET *pkt, struct iphdr *ip, char *sip, char *dip, cha
     ip->saddr.s_addr = inet_addr(sip); // Source IP Address
     ip->daddr.s_addr = inet_addr(dip);  // Destination IP Address
 
-    pkt->hdr = (struct iphdr*)strndup((char *)ip, sizeof(*ip));
-    pkt->buf = strdup(data);
+    // pkt->hdr = (struct iphdr*)strndup((char *)ip, sizeof(*ip));
+    // pkt->buf = strdup(data);
+    memcpy(&pkt->hdr, ip, sizeof(struct iphdr));
+    memcpy(&pkt->buf, data, buf_len);
 }
 
 int GetConnection(struct sockaddr_in *dst_addr, int *sockfd) {
@@ -125,10 +128,10 @@ int start_tcp_server(int *fd) {
         return FAILURE;
     }
     char *buf = malloc(sizeof(char) *255);
-    while (1) {
+    memset(buf, 0, 255);
+    while(read(new_fd, buf, MTU) > 0) {
+        printf("%s\n", buf + sizeof(struct iphdr));
         memset(buf, 0, 255);
-        read(new_fd, buf, sizeof(buf));
-        printf("%s\n", buf);
     }
     free(buf);
 
@@ -158,8 +161,8 @@ int start_tcp_client(int *fd, char *dst_addr, char *src_addr) {
     ip_hdr = calloc(1, sizeof(*ip_hdr));
     pkt = calloc(1, sizeof(*pkt));
     Fill_IP_PKT(pkt, ip_hdr, src_addr, dst_addr, buf);
-    MULTIPLE_WRITE(*fd, pkt, sizeof(pkt))
-    printf("%s\n", buf);
+    MULTIPLE_WRITE(*fd, pkt, MTU)
+    printf("%s\n", (char *)&pkt->buf);
     return SUCCESS;
 }
 
@@ -178,11 +181,11 @@ int start_udp_server(int *fd) {
     saddr.sin_port = 5201;
     bind(*fd, (struct sockaddr *)&saddr, sizeof(saddr));
     printf("Server running .....\n");
-    char *buf = malloc(sizeof(char) *255);
-    while (1) {
+    char *buf = malloc(MTU + 1);
+    memset(buf, 0, 255);
+    while(read(*fd, buf, MTU) > 0) {
+        printf("%s\n", buf + sizeof(struct iphdr));
         memset(buf, 0, 255);
-        read(*fd, buf, sizeof(buf));
-        printf("%s\n", buf);
     }
     free(buf);
 
@@ -212,8 +215,8 @@ int start_udp_client(int *fd, char *dst_addr, char *src_addr) {
     pkt = calloc(1, sizeof(*pkt));
     ip_hdr = calloc(1, sizeof(*ip_hdr));
     Fill_IP_PKT(pkt, ip_hdr, src_addr, dst_addr, buf);
-    MULTIPLE_WRITE(*fd, pkt, sizeof(pkt))
-    printf("%s\n", buf);
+    MULTIPLE_WRITE(*fd, pkt, MTU);
+    printf("%s\n", (char *)&pkt->buf);
     return SUCCESS;
 }
 
