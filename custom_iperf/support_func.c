@@ -191,6 +191,8 @@ int start_udp_server(int *fd) {
 
 int start_udp_client(int *fd, char *dst_addr, char *src_addr) {
     struct sockaddr_in daddr;
+    struct PACKET *pkt;
+    struct iphdr *ip_hdr;
     if (dst_addr != NULL) {
         daddr.sin_family = AF_INET;
         daddr.sin_port = 5201;
@@ -207,7 +209,10 @@ int start_udp_client(int *fd, char *dst_addr, char *src_addr) {
     }
     printf("Client running ......\n");
     char buf[255] = "hello";
-    MULTIPLE_WRITE(*fd, buf, sizeof(buf))
+    pkt = calloc(1, sizeof(*pkt));
+    ip_hdr = calloc(1, sizeof(*ip_hdr));
+    Fill_IP_PKT(pkt, ip_hdr, src_addr, dst_addr, buf);
+    MULTIPLE_WRITE(*fd, pkt, sizeof(pkt))
     printf("%s\n", buf);
     return SUCCESS;
 }
