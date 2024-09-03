@@ -87,8 +87,8 @@ void Fill_IP_PKT(struct PACKET *pkt, struct iphdr *ip, char *sip, char *dip, cha
     ip->saddr.s_addr = inet_addr(sip); // Source IP Address
     ip->daddr.s_addr = inet_addr(dip);  // Destination IP Address
 
-    pkt->hdr = ip;
-    pkt->buf = data;
+    pkt->hdr = (struct iphdr*)strndup((char *)ip, sizeof(*ip));
+    pkt->buf = strdup(data);
 }
 
 int GetConnection(struct sockaddr_in *dst_addr, int *sockfd) {
@@ -158,7 +158,7 @@ int start_tcp_client(int *fd, char *dst_addr, char *src_addr) {
     ip_hdr = calloc(1, sizeof(*ip_hdr));
     pkt = calloc(1, sizeof(*pkt));
     Fill_IP_PKT(pkt, ip_hdr, src_addr, dst_addr, buf);
-    MULTIPLE_WRITE(*fd, buf, sizeof(buf))
+    MULTIPLE_WRITE(*fd, pkt, sizeof(pkt))
     printf("%s\n", buf);
     return SUCCESS;
 }
