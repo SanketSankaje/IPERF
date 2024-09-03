@@ -237,10 +237,9 @@ int Configure(char *APPtype, char *if_name, char *proto, char *dst_addr) {
                 printf("Cannot start server\n");
                 return FAILURE;
             }
-            else if (start_tcp_server(&fd) < 0) {
-                printf("Cannot start server\n");
-                return FAILURE;
-            }
+        } else if (start_tcp_server(&fd) < 0) {
+            printf("Cannot start server\n");
+            return FAILURE;
         }
     } else if (strcmp(APPtype, "-c") == 0) {
         if (strcmp(proto, "-udp") == 0) {
@@ -248,10 +247,9 @@ int Configure(char *APPtype, char *if_name, char *proto, char *dst_addr) {
                 printf("Cannot start client\n");
                 return FAILURE;
             }
-            else if (start_tcp_client(&fd, dst_addr, ip_a) < 0) {
-                printf("Cannot start client\n");
-                return FAILURE;
-            }
+        } else if (start_tcp_client(&fd, dst_addr, ip_a) < 0) {
+            printf("Cannot start client\n");
+            return FAILURE;
         }
     } else {
         print_suggestions();
