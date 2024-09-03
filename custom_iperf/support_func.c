@@ -1,5 +1,6 @@
 #include "support.h"
 #include <netinet/in.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -74,6 +75,22 @@ char *get_mac(char *if_name, int socketfd) {
     return mac_address;
 }
 
+void Fill_IP_PKT(struct PACKET *pkt, struct iphdr *ip, char *sip, char *dip, char *data) {
+    ip->h_vhl = 5;                // Header Length (5 words)
+    ip->version = 4;               // IP Version (4)
+    ip->tos = 0;                  // Type of Service (default)
+    ip->total_len = sizeof(struct iphdr) + sizeof(data); // Total Length
+    ip->id = htons(54321);        // Identification (arbitrary)
+    ip->frag_off = 0;               // Fragment Offset (no fragmentation)
+    ip->ttl = 64;                 // Time to Live (64 seconds)
+    ip->protocol = IPPROTO_IP;  // Protocol (ICMP)
+    ip->saddr.s_addr = inet_addr(sip); // Source IP Address
+    ip->daddr.s_addr = inet_addr(dip);  // Destination IP Address
+
+    pkt->hdr = ip;
+    pkt->buf = data;
+}
+
 int GetConnection(struct sockaddr_in *dst_addr, int *sockfd) {
     int status;
     status = connect(*sockfd, (struct sockaddr *)dst_addr, sizeof(*dst_addr));
@@ -118,8 +135,10 @@ int start_tcp_server(int *fd) {
     return SUCCESS;
 }
 
-int start_tcp_client(int *fd, char *dst_addr) {
+int start_tcp_client(int *fd, char *dst_addr, char *src_addr) {
     struct sockaddr_in daddr;
+    struct PACKET *pkt;
+    struct iphdr *ip_hdr;
     if (dst_addr != NULL) {
         daddr.sin_family = AF_INET;
         daddr.sin_port = 5201;
@@ -136,6 +155,9 @@ int start_tcp_client(int *fd, char *dst_addr) {
     }
     printf("Client running ......\n");
     char buf[255] = "hello";
+    ip_hdr = calloc(1, sizeof(*ip_hdr));
+    pkt = calloc(1, sizeof(*pkt));
+    Fill_IP_PKT(pkt, ip_hdr, src_addr, dst_addr, buf);
     MULTIPLE_WRITE(*fd, buf, sizeof(buf))
     printf("%s\n", buf);
     return SUCCESS;
@@ -143,9 +165,7 @@ int start_tcp_client(int *fd, char *dst_addr) {
 
 int start_udp_server(int *fd) {
     struct sockaddr_in saddr;
-    // int new_fd;
     int opt = 1;
-    // int addr_len = sizeof(struct sockaddr);
     if (setsockopt(*fd, SOL_SOCKET,
                 SO_REUSEADDR | SO_REUSEPORT, &opt,
                 sizeof(opt))) {
@@ -157,13 +177,7 @@ int start_udp_server(int *fd) {
     saddr.sin_family = AF_INET;
     saddr.sin_port = 5201;
     bind(*fd, (struct sockaddr *)&saddr, sizeof(saddr));
-    // listen(*fd, 3);
     printf("Server running .....\n");
-    // if ((new_fd = accept(*fd, (struct sockaddr *)&daddr, (socklen_t*)&addr_len)) < 0) {
-    //     perror("accept");
-    //     close(*fd);
-    //     return FAILURE;
-    // }
     char *buf = malloc(sizeof(char) *255);
     while (1) {
         memset(buf, 0, 255);
@@ -175,7 +189,7 @@ int start_udp_server(int *fd) {
     return SUCCESS;
 }
 
-int start_udp_client(int *fd, char *dst_addr) {
+int start_udp_client(int *fd, char *dst_addr, char *src_addr) {
     struct sockaddr_in daddr;
     if (dst_addr != NULL) {
         daddr.sin_family = AF_INET;
@@ -230,11 +244,11 @@ int Configure(char *APPtype, char *if_name, char *proto, char *dst_addr) {
         }
     } else if (strcmp(APPtype, "-c") == 0) {
         if (strcmp(proto, "-udp") == 0) {
-            if (start_udp_client(&fd, dst_addr) < 0) {
+            if (start_udp_client(&fd, dst_addr, ip_a) < 0) {
                 printf("Cannot start client\n");
                 return FAILURE;
             }
-            else if (start_tcp_client(&fd, dst_addr) < 0) {
+            else if (start_tcp_client(&fd, dst_addr, ip_a) < 0) {
                 printf("Cannot start client\n");
                 return FAILURE;
             }

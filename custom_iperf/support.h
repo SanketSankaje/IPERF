@@ -19,24 +19,6 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
-struct ethdr {
-    unsigned short h_dest[6];
-    unsigned short h_source[6];
-    unsigned short h_proto;
-};
-
-struct iphdr {
-    unsigned char h_vhl;
-    unsigned char tos;
-    unsigned short total_len;
-    unsigned short id;
-    unsigned short frag_off;
-    unsigned char ttl;
-    unsigned char protocol;
-    unsigned short check;
-    struct in_addr saddr;
-    struct in_addr daddr;
-};
 
 #define SERVER 1
 #define CLIENT 2
@@ -48,6 +30,32 @@ struct iphdr {
 #define MAC_ADDR_LEN 18
 #define MTU 1500
 
+
+struct ethdr {
+    unsigned short h_dest[6];
+    unsigned short h_source[6];
+    unsigned short h_proto;
+};
+
+struct iphdr {
+    unsigned char h_vhl : 4;
+    unsigned char version : 4;
+    unsigned char tos;
+    unsigned short total_len;
+    unsigned short id;
+    unsigned short frag_off;
+    unsigned char ttl;
+    unsigned char protocol;
+    unsigned short check;
+    struct in_addr saddr;
+    struct in_addr daddr;
+};
+
+struct PACKET {
+    struct iphdr *hdr;
+    char *buf;
+};
+
 #define MULTIPLE_WRITE(_fd, _buf, _cnt)\
 unsigned int count = _cnt;\
 do {\
@@ -58,11 +66,12 @@ do {\
 
 
 void print_suggestions();
+void Fill_IP_PKT(struct PACKET *pkt, struct iphdr*, char *sip, char *dip, char *data);
 int Configure(char *type, char *if_name, char *proto, char *dst_addr);
 int GetConnection(struct sockaddr_in *dst_addr, int *sockfd);
 char *get_ip(char *if_name);
 char *get_mac(char *if_name, int  sockfd);
 int start_tcp_server(int *fd);
-int start_tcp_client(int *fd, char *dst_addr);
+int start_tcp_client(int *fd, char *dst_addr, char *src_addr);
 int start_udp_server(int *fd);
-int start_udp_client(int *fd, char *dst_addr);
+int start_udp_client(int *fd, char *dst_addr, char *src_addr);
