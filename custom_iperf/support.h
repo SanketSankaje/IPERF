@@ -28,7 +28,7 @@
 #define FAILURE -1
 
 #define MAC_ADDR_LEN 18
-#define MTU 1500
+#define MTU 1472
 
 
 struct ethdr {

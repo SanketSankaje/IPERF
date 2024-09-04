@@ -122,16 +122,19 @@ int start_tcp_server(int *fd) {
     bind(*fd, (struct sockaddr *)&saddr, sizeof(saddr));
     listen(*fd, 3);
     printf("Server running .....\n");
-    if ((new_fd = accept(*fd, (struct sockaddr *)&daddr, (socklen_t*)&addr_len)) < 0) {
-        perror("accept");
-        close(*fd);
-        return FAILURE;
-    }
     char *buf = malloc(sizeof(char) *255);
     memset(buf, 0, 255);
-    while(read(new_fd, buf, MTU) > 0) {
-        printf("%s\n", buf + sizeof(struct iphdr));
-        memset(buf, 0, 255);
+    while (1) {
+        if ((new_fd = accept(*fd, (struct sockaddr *)&daddr, (socklen_t*)&addr_len)) < 0) {
+            perror("accept");
+            close(*fd);
+            return FAILURE;
+        }
+        while(read(new_fd, buf, MTU) > 0) {
+            printf("%s\n", buf + sizeof(struct iphdr));
+            memset(buf, 0, 255);
+        }
+        close(new_fd);
     }
     free(buf);
 
@@ -261,8 +264,10 @@ int Configure(char *APPtype, char *if_name, char *proto, char *dst_addr) {
         }
     } else {
         print_suggestions();
+        close(fd);
         return FAILURE;
     }
 
+    close(fd);
     return SUCCESS;
 }
