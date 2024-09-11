@@ -166,6 +166,8 @@ int start_tcp_client(int *fd, char *dst_addr, char *src_addr) {
     Fill_IP_PKT(pkt, ip_hdr, src_addr, dst_addr, buf);
     MULTIPLE_WRITE(*fd, pkt, MTU)
     printf("%s\n", (char *)&pkt->buf);
+    free(pkt);
+    free(ip_hdr);
     return SUCCESS;
 }
 
@@ -220,6 +222,8 @@ int start_udp_client(int *fd, char *dst_addr, char *src_addr) {
     Fill_IP_PKT(pkt, ip_hdr, src_addr, dst_addr, buf);
     MULTIPLE_WRITE(*fd, pkt, MTU);
     printf("%s\n", (char *)&pkt->buf);
+    free(pkt);
+    free(ip_hdr);
     return SUCCESS;
 }
 
