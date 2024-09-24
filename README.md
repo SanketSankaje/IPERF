@@ -7,7 +7,7 @@ An simple library for communication between multiple systems in an network.
 
 - `./test -s/-c interface_name -tcp/-udp dest_ip[incase of client]`
 	-s to run test as server.
-	-c to run test ad client
+	-c to run test as client
 	-tcp for tcp protocol
 	-udp for udp protocol
 
