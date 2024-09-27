@@ -3,7 +3,16 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <sys/time.h>
 
+void add_time_stamp(struct PACKET *pkt) {
+    time_t t;
+    struct tm* tm1;
+
+    t = time(NULL);
+    tm1 = localtime(&t);
+    strftime(pkt->time_stamp, 26, "%Y-%m-%d %H:%M:%S", tm1);
+}
 
 char *get_ip(char *if_name) {
     char *ip_address = NULL;
@@ -131,7 +140,8 @@ int start_tcp_server(int *fd) {
             return FAILURE;
         }
         while(read(new_fd, buf, MTU) > 0) {
-            printf("%s\n", buf + sizeof(struct iphdr));
+            struct PACKET *pkt = (struct PACKET *)buf;
+            printf("%s, from %s to %s at %s\n", pkt->buf, inet_ntoa(pkt->hdr.daddr), inet_ntoa(pkt->hdr.saddr), pkt->time_stamp);
             memset(buf, 0, 255);
         }
         close(new_fd);
@@ -164,8 +174,9 @@ int start_tcp_client(int *fd, char *dst_addr, char *src_addr) {
     ip_hdr = calloc(1, sizeof(*ip_hdr));
     pkt = calloc(1, sizeof(*pkt));
     Fill_IP_PKT(pkt, ip_hdr, src_addr, dst_addr, buf);
-    MULTIPLE_WRITE(*fd, pkt, MTU)
-    printf("%s\n", (char *)&pkt->buf);
+    add_time_stamp(pkt);
+    write(*fd, pkt, MTU);
+    printf("%s, from %s to %s at %s\n", pkt->buf, inet_ntoa(pkt->hdr.daddr), inet_ntoa(pkt->hdr.saddr), pkt->time_stamp);
     free(pkt);
     free(ip_hdr);
     return SUCCESS;
@@ -189,7 +200,8 @@ int start_udp_server(int *fd) {
     char *buf = malloc(MTU + 1);
     memset(buf, 0, 255);
     while(read(*fd, buf, MTU) > 0) {
-        printf("%s\n", buf + sizeof(struct iphdr));
+        struct PACKET *pkt = (struct PACKET *)buf;
+        printf("%s, from %s to %s at %s\n", pkt->buf, inet_ntoa(pkt->hdr.daddr), inet_ntoa(pkt->hdr.saddr), pkt->time_stamp);
         memset(buf, 0, 255);
     }
     free(buf);
@@ -220,8 +232,9 @@ int start_udp_client(int *fd, char *dst_addr, char *src_addr) {
     pkt = calloc(1, sizeof(*pkt));
     ip_hdr = calloc(1, sizeof(*ip_hdr));
     Fill_IP_PKT(pkt, ip_hdr, src_addr, dst_addr, buf);
-    MULTIPLE_WRITE(*fd, pkt, MTU);
-    printf("%s\n", (char *)&pkt->buf);
+    add_time_stamp(pkt);
+    write(*fd, pkt, MTU);
+    printf("%s, from %s to %s at %s\n", pkt->buf, inet_ntoa(pkt->hdr.daddr), inet_ntoa(pkt->hdr.saddr), pkt->time_stamp);
     free(pkt);
     free(ip_hdr);
     return SUCCESS;

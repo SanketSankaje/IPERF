@@ -1,3 +1,4 @@
+#include <linux/if_ether.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -52,20 +53,15 @@ struct iphdr {
 };
 
 struct PACKET {
+    struct ethhdr ehdr;
     struct iphdr hdr;
-    char buf[MTU - sizeof(struct iphdr)];
+    char time_stamp[50];
+    char buf[MTU - sizeof(struct iphdr) - sizeof(struct ethhdr) - 50];
 };
-
-#define MULTIPLE_WRITE(_fd, _buf, _cnt)\
-unsigned int count = _cnt;\
-do {\
-    count -= write(_fd, _buf, MTU);\
-    if (count <= 0) break;\
-} while (1);
-
 
 
 void print_suggestions();
+void add_time_stamp(struct PACKET *pkt);
 void Fill_IP_PKT(struct PACKET *pkt, struct iphdr*, char *sip, char *dip, char *data);
 int Configure(char *type, char *if_name, char *proto, char *dst_addr);
 int GetConnection(struct sockaddr_in *dst_addr, int *sockfd);
