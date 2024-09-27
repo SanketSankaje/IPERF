@@ -55,8 +55,9 @@ struct iphdr {
 struct PACKET {
     struct ethhdr ehdr;
     struct iphdr hdr;
-    char time_stamp[50];
-    char buf[MTU - sizeof(struct iphdr) - sizeof(struct ethhdr) - 50];
+    // char time_stamp[50];
+    struct timespec tv;
+    char buf[MTU - sizeof(struct iphdr) - sizeof(struct ethhdr) - sizeof(struct timespec)];
 };
 
 

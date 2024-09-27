@@ -21,5 +21,6 @@ $(TARGET): $(OBJECTS)
 
 clean:
 	rm -f $(TARGET) $(OBJECTS)
+	rm -rf test
 	# sudo rm /usr/lib/lib_custom_iperf.so
 

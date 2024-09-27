@@ -4,15 +4,16 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include <sys/time.h>
+#include <time.h>
 
-void add_time_stamp(struct PACKET *pkt) {
-    time_t t;
-    struct tm* tm1;
+// void add_time_stamp(struct PACKET *pkt) {
+//     time_t t;
+//     struct tm* tm1;
 
-    t = time(NULL);
-    tm1 = localtime(&t);
-    strftime(pkt->time_stamp, 26, "%Y-%m-%d %H:%M:%S", tm1);
-}
+//     t = time(NULL);
+//     tm1 = localtime(&t);
+//     strftime(pkt->time_stamp, 26, "%Y-%m-%d %H:%M:%S", tm1);
+// }
 
 char *get_ip(char *if_name) {
     char *ip_address = NULL;
@@ -141,7 +142,9 @@ int start_tcp_server(int *fd) {
         }
         while(read(new_fd, buf, MTU) > 0) {
             struct PACKET *pkt = (struct PACKET *)buf;
-            printf("%s, from %s to %s at %s\n", pkt->buf, inet_ntoa(pkt->hdr.daddr), inet_ntoa(pkt->hdr.saddr), pkt->time_stamp);
+            struct timespec tv1;
+            clock_gettime(CLOCK_REALTIME, &tv1);
+            printf("%s, from %s to %s at %ld.%ld\n", pkt->buf, inet_ntoa(pkt->hdr.daddr), inet_ntoa(pkt->hdr.saddr), tv1.tv_sec - pkt->tv.tv_sec, tv1.tv_nsec - pkt->tv.tv_nsec);
             memset(buf, 0, 255);
         }
         close(new_fd);
@@ -174,9 +177,10 @@ int start_tcp_client(int *fd, char *dst_addr, char *src_addr) {
     ip_hdr = calloc(1, sizeof(*ip_hdr));
     pkt = calloc(1, sizeof(*pkt));
     Fill_IP_PKT(pkt, ip_hdr, src_addr, dst_addr, buf);
-    add_time_stamp(pkt);
+    // add_time_stamp(pkt);
+    clock_gettime(CLOCK_REALTIME, &pkt->tv);
     write(*fd, pkt, MTU);
-    printf("%s, from %s to %s at %s\n", pkt->buf, inet_ntoa(pkt->hdr.daddr), inet_ntoa(pkt->hdr.saddr), pkt->time_stamp);
+    printf("%s, from %s to %s at %ld.%ld\n", pkt->buf, inet_ntoa(pkt->hdr.daddr), inet_ntoa(pkt->hdr.saddr), pkt->tv.tv_sec, pkt->tv.tv_nsec);
     free(pkt);
     free(ip_hdr);
     return SUCCESS;
@@ -201,7 +205,7 @@ int start_udp_server(int *fd) {
     memset(buf, 0, 255);
     while(read(*fd, buf, MTU) > 0) {
         struct PACKET *pkt = (struct PACKET *)buf;
-        printf("%s, from %s to %s at %s\n", pkt->buf, inet_ntoa(pkt->hdr.daddr), inet_ntoa(pkt->hdr.saddr), pkt->time_stamp);
+        // printf("%s, from %s to %s at %s\n", pkt->buf, inet_ntoa(pkt->hdr.daddr), inet_ntoa(pkt->hdr.saddr), pkt->time_stamp);
         memset(buf, 0, 255);
     }
     free(buf);
@@ -232,9 +236,9 @@ int start_udp_client(int *fd, char *dst_addr, char *src_addr) {
     pkt = calloc(1, sizeof(*pkt));
     ip_hdr = calloc(1, sizeof(*ip_hdr));
     Fill_IP_PKT(pkt, ip_hdr, src_addr, dst_addr, buf);
-    add_time_stamp(pkt);
+    // add_time_stamp(pkt);
     write(*fd, pkt, MTU);
-    printf("%s, from %s to %s at %s\n", pkt->buf, inet_ntoa(pkt->hdr.daddr), inet_ntoa(pkt->hdr.saddr), pkt->time_stamp);
+    // printf("%s, from %s to %s at %s\n", pkt->buf, inet_ntoa(pkt->hdr.daddr), inet_ntoa(pkt->hdr.saddr), pkt->time_stamp);
     free(pkt);
     free(ip_hdr);
     return SUCCESS;
