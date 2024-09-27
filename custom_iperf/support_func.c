@@ -142,9 +142,9 @@ int start_tcp_server(int *fd) {
         }
         while(read(new_fd, buf, MTU) > 0) {
             struct PACKET *pkt = (struct PACKET *)buf;
-            struct timespec tv1;
-            clock_gettime(CLOCK_REALTIME, &tv1);
-            printf("%s, from %s to %s at %ld.%ld\n", pkt->buf, inet_ntoa(pkt->hdr.daddr), inet_ntoa(pkt->hdr.saddr), tv1.tv_sec - pkt->tv.tv_sec, tv1.tv_nsec - pkt->tv.tv_nsec);
+            struct timeval tv1;
+            gettimeofday(&tv1, NULL);
+            printf("%s, from %s to %s at %ld.%ld\n", pkt->buf, inet_ntoa(pkt->hdr.daddr), inet_ntoa(pkt->hdr.saddr), tv1.tv_sec - pkt->tv.tv_sec, tv1.tv_usec - pkt->tv.tv_usec);
             memset(buf, 0, 255);
         }
         close(new_fd);
@@ -178,9 +178,9 @@ int start_tcp_client(int *fd, char *dst_addr, char *src_addr) {
     pkt = calloc(1, sizeof(*pkt));
     Fill_IP_PKT(pkt, ip_hdr, src_addr, dst_addr, buf);
     // add_time_stamp(pkt);
-    clock_gettime(CLOCK_REALTIME, &pkt->tv);
+    gettimeofday(&pkt->tv, NULL);
     write(*fd, pkt, MTU);
-    printf("%s, from %s to %s at %ld.%ld\n", pkt->buf, inet_ntoa(pkt->hdr.daddr), inet_ntoa(pkt->hdr.saddr), pkt->tv.tv_sec, pkt->tv.tv_nsec);
+    printf("%s, from %s to %s at %ld.%ld\n", pkt->buf, inet_ntoa(pkt->hdr.daddr), inet_ntoa(pkt->hdr.saddr), pkt->tv.tv_sec, pkt->tv.tv_usec);
     free(pkt);
     free(ip_hdr);
     return SUCCESS;
